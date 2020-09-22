@@ -1,0 +1,59 @@
+---
+title: "casestudy 4"
+output: 
+  html_document:
+    keep_md: TRUE 
+---
+
+```{r, echo=FALSE}
+library(nycflights13)
+library(tidyverse)
+
+dat <- nycflights13::flights
+
+```
+
+#Which airport is best to minimuze my chances of a late arrival when using Delta Airlines? 
+
+```{r}
+num2 <- dat %>% 
+  filter(carrier == 'DL') %>% 
+  group_by(origin) %>% 
+  summarise(avg_arr_delay = mean(arr_delay, na.rm = T)) %>% 
+  arrange(avg_arr_delay)
+num2
+
+p2 <- ggplot(num2, mapping = aes(x = origin, y = avg_arr_delay)) +
+  geom_col() +
+  ggtitle('Average arrival delay by origin for Delta') +
+  theme_bw()
+p2
+```
+
+By the graph and the table we can see that the average arrival delay is the lowest for JFK
+
+#Which destination airport is the worst by arrival time? 
+
+```{r}
+num3 <- dat %>% 
+  filter(dest != "LGA") %>% 
+  group_by(dest) %>% 
+  summarize(avg_arr_delay = mean(arr_delay, na.rm = T),
+            sd_arr_delay = sd(arr_delay, na.rm = T),
+            interval = (avg_arr_delay+sd_arr_delay)-(avg_arr_delay-sd_arr_delay)) %>% 
+  arrange(avg_arr_delay, interval) %>% 
+  tail(10)
+num3
+```
+
+```{r}
+p3 <- ggplot(num3,aes(x = reorder(dest, avg_arr_delay), y = avg_arr_delay)) +
+  geom_col() +
+  ggtitle('Average arrival delay by destination') +
+  labs(x = 'destination', y = 'average arrival delay') +
+  theme_bw()
+  
+p3
+```
+
+As we can see by the grpah, CAE is the worst by average arrival delay. On average they are 40 minutes behind schedule. 
