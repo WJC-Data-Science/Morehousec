@@ -1,0 +1,26 @@
+---
+title: "task 11"
+output: 
+  html_document:
+    keep_md: TRUE
+---
+
+#notes
+
+
+```{r}
+devtools::install_github("drsimonj/ourworldindata")
+df1 <- ourworldindata::financing_healthcare
+
+df <- df1 %>% 
+  filter(year > 1950 & country != 'NA' & continent != 'NA') %>% 
+  group_by(year, continent) %>% 
+  summarise(avg_cmort = mean(child_mort, na.rm = T))
+
+ggplot(df, aes(x = year, y = avg_cmort, color = continent)) +
+  geom_path()
+```
+
+#conclusion
+As we can see in the graph, every continent is decreasing rapidly in child mortality. I removed all countries 
+and continents with NAs and I started the data at 1950 because the data before 1950 was very inconsistent. From my eye, and because we don't have good data in this data set on it, it also seems that the starting points were based upon the averag wealth of the continents. Also, the higher the starting point, the steeper the rate of decline towards 0. 
