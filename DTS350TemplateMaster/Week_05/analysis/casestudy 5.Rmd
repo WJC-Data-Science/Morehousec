@@ -1,0 +1,32 @@
+---
+title: "case study 5"
+output: 
+  html_document:
+    keep_md: TRUE
+---
+
+#1)
+The article shows that the majority of deaths from firearms are by suicide and most of those are by the older population of men. The next most common cause of death by firearm is by homocide and those are predominantly by young men. Women are at lower risk for a fire arm related death, and most of those are cases of domestic violence. 
+
+```{r, echo=FALSE}
+dat <- read.csv('full_data.csv')
+
+p2 <- ggplot(dat, aes(x = (intent))) +
+  geom_histogram(stat = 'count') +
+  scale_x_discrete(limits = c('Suicide','Homicide','Accidental','Undetermined'))
+p2
+```
+
+#2)
+```{r echo=FALSE}
+p1 <- ggplot(dat, mapping = aes(x = month)) +
+   geom_histogram(stat = 'count')
+p1
+
+p3 <- ggplot(dat, mapping = aes(x = sex)) + 
+  geom_histogram(stat = 'count') +
+  facet_wrap(~month)
+p3
+```
+
+As we can see in the first graph, there's very little variation month to month, instead we should maybe focus on gender discrepancies as there is a huge difference in the values between males and females in every month
