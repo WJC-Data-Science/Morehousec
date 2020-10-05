@@ -1,0 +1,115 @@
+---
+title: "casestudy 6"
+output: 
+  html_document:
+    keep_md: TRUE
+---
+
+#1 
+distributions of x,y, and z
+```{r,echo=FALSE}
+p5 <- ggplot(diamonds, aes(x = x)) +
+  geom_density()
+p5
+
+p9 <- ggplot(diamonds, aes(x = y)) +
+  geom_density()
+p9
+
+p10 <- ggplot(diamonds, aes(x = z)) + 
+  geom_density()
+p10
+```
+
+#2 
+distribution of price
+```{r,echo=FALSE}
+p6 <- ggplot(diamonds, aes(x = price)) +
+  geom_density(binwidth = 50, fill = 'light blue')
+p6
+```
+Nothing too surprising, there is a heavy skew towards lower priced diamonds. The only possible abnormality would be the slight uptick of diamonds just below 5000 dollars. This could be due variation in the data though
+
+#3
+```{r,echo=FALSE}
+p1 <- ggplot(diamonds, aes(x = price, y = x)) +
+  geom_point() +
+  geom_abline(slope = 1) +
+  scale_x_continuous(trans = 'log10')
+p1
+
+p2 <- ggplot(diamonds, aes(x = price, y = y)) +
+  geom_point() +
+  geom_abline(slope = 1) +
+  scale_x_continuous(trans = 'log10')
+p2
+
+p3 <- ggplot(diamonds, aes(x = price, y = z)) +
+  geom_point() + 
+  geom_abline(slope = 1) +
+  scale_x_continuous(trans = 'log10')
+p3
+```
+By the graphs we can see that z is the closest to the line denoting a 1:1 correlation and is therefore the best predictor of price. 
+```{r,echo=FALSE}
+p4 <- ggplot(diamonds, aes(x = cut, y = z)) +
+  geom_violin() 
+p4
+```
+As we can see from this graph, the trend of the data seems to travel direcetly opposite the 1:1 line, indicating a negative correlation of price and cut. This decreasing of cut quality as price increases shows how lower quality diamonds can be a higher value. This is probably due to the price of the diamonds being more determined by size than quality. 
+
+#4
+carat partitioned by price 
+```{r,ehco=FALSE}
+dat <- diamonds %>% 
+  mutate(
+    type = case_when(
+      price < 2500 ~ '<2500',
+      price < 5000 ~ '<5000',
+      price < 7500 ~ '<7500',
+      price < 10000 ~ '<10000',
+      price < 12500 ~ '<12500',
+      price < 15000 ~ '<15000',
+      price < 17500 ~ '<17500',
+      price < 20000 ~ '<20000',
+      price < 22500 ~ '<22500',
+      TRUE ~ '>22500')
+  )
+
+dat$type <- factor(dat$type, levels = str)  
+
+p7 <- ggplot(dat, aes(x = type, y = carat)) +
+  geom_violin()
+p7
+```
+
+#5
+price distriburion of very large vs very small diamonds 
+```{r,echo=FALSE}
+quantile(diamonds$carat)
+
+dat2 <- diamonds %>% 
+  mutate(
+    type = case_when(
+      carat <= .4 ~ 'very small',
+      carat <=1.04 ~ 'normal',
+      carat > 1.04 ~'very large'
+    ) 
+  ) %>% 
+  filter(type != 'normal')
+      
+
+
+p8 <- ggplot(dat2, aes(x = type, y = price)) +
+  geom_violin() 
+p8
+```
+As we can see, the large diamonds have a very wide distribution, and the small diamonds have a very tight distribution concentrated at the low end 
+
+#6
+```{r}
+require(lattice)
+levelplot(diamonds$price ~ diamonds$cut*diamonds$carat,col.regions = rainbow(256), xlab = 'cut', ylab = 'carat')
+
+```
+The graph shows that across all cuts, the price is similar. But as carat increases, then price increases independent of cut 
