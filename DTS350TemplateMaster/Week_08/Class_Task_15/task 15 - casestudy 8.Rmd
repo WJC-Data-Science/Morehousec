@@ -1,0 +1,65 @@
+---
+title: "task 15 / casestudy 8"
+output: 
+  html_document:
+    keep_md: TRUE
+---
+
+```{r,echo=FALSE}
+require(Lahman)
+require(blscrapeR)
+require(tidyverse)
+
+inf_dollars <- inflation_adjust(2017)
+
+together <- People %>% 
+  select(playerID, nameFirst, nameLast) %>% 
+  left_join(., select(Salaries, playerID, salary, yearID)) %>% 
+  filter(yearID > 1947) %>% 
+  left_join(., select(CollegePlaying, playerID, schoolID)) %>% 
+  left_join(., select(Schools, schoolID, name_full, state)) %>% 
+  unite(c('nameFirst','nameLast'), sep = ' ', col = 'full_name') %>% 
+  select(yearID, full_name, salary, name_full, state) %>% 
+  unique() 
+
+years <- c()
+for (i in seq_len(NROW(inf_dollars))) {
+  years[i] <- inf_dollars$year[i]
+}
+
+for (i in seq_len(NROW(together))) {
+  if (together$yearID[i] == (match(together$yearID[i], years) + 1946)) {
+    together$salary[i] <- together$salary[i] * (1 + inf_dollars$adj_value[match(together$yearID[i], years)])
+  }
+}
+
+mo_not_mizzou <- together %>% 
+  filter(state == 'MO') %>% 
+  filter(name_full != 'University of Missouri')
+
+mizzou <- together %>% 
+  filter(name_full == 'University of Missouri Columbia')
+```
+
+```{r,echo=FALSE}
+non_mizzou <- ggplot(data = mo_not_mizzou, mapping = aes(x = yearID, y = salary)) +
+  geom_path(aes(color = full_name)) +
+  guides(color = F) +
+  ggtitle('Non-Mizzou players') +
+  scale_y_continuous(labels  = function(x) {trans = x/1000000}) +
+  ylab('salary (millions)')
+non_mizzou
+```
+In the plot, each line represents a different player. I left the legend out because the identity of individual players isn't relevant to the question. This is the plot for non-Mizzou players. We can see there is a signifigant amount of players and going all the way back to about 1985 and a strong trend of higher paid player as we move closer to the present, with salaries topping out close to 50 million per year. 
+```{r,echo=FALSE}
+mizzou_graph <- ggplot(data = mizzou, mapping = aes(x = yearID, y = salary)) +
+  geom_path(aes(color = full_name)) +
+  guides(color = F) +
+  ggtitle('Mizzou players') +
+  scale_y_continuous(labels  = function(x) {trans = x/1000000}) +
+  ylab('salary (millions)')
+mizzou_graph
+```
+This is the graph of Mizzou players. We can a much smaller number of players, which isn't unexpected becuause this is only one collge compared to many. We can see a very similar trend of salaries, in that as we get close to present day there is a spike in salaries. Both graphs still have players in recent history that also have low salaries. 
+
+In conclusion, both graphs are very similar on the whole. The Mizzou graph has understandable less data points but they trend the same direction with similar peak values and similar rates of accent and durrations of lines 
