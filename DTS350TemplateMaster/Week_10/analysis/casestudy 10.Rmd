@@ -1,0 +1,167 @@
+---
+title: "casestudy 10"
+output: 
+  html_document:
+    keep_md: TRUE
+---
+
+```{r setup, include=FALSE}
+#setup and making tables 
+require(tidyverse)
+require(lubridate)
+
+dat <- read_csv(url('https://github.com/WJC-Data-Science/DTS350/raw/master/sales.csv')) 
+  
+dat$Time <- ymd_hms(dat$Time) 
+dat$Time <- ceiling_date(dat$Time, unit = 'hour') 
+dat$date <- as.Date(dat$Time)
+dat$time <- format(as.POSIXct(dat$Time, format = '%Y:%m:%d %H:%M:%S'), '%H:%M:%S')
+
+simple <- dat %>% 
+  filter(Name != 'Missing') %>% 
+  select(Name, time)
+
+summary <- dat %>% 
+  filter(Name != 'Missing') %>% 
+  group_by(Name, time) %>% 
+  summarise(thing = sum(Amount, na.rm = T))
+summary
+
+summary2 <- dat %>% 
+  filter(Name != 'Missing') %>% 
+  group_by(Name) %>% 
+  summarise(thing = sum(Amount, na.rm = T))
+summary2
+
+```
+
+```{r, include=FALSE}
+total_sales <- ggplot(summary2, aes(x = reorder(Name, -thing), y = thing)) +
+  geom_col() +
+  xlab('Company') +
+  ylab('Sum of total sales') +
+  ggtitle('Total sales by company') +
+  theme_bw()
+```
+
+```{r, warning=FALSE}
+total_sales
+```
+
+
+# Analysis and Recommendations 
+
+If we look at raw total sales over the time frame provided, we see that HotDiggity had the most total sales of any company.
+
+```{r, include=FALSE}
+#plots
+by_time <- ggplot(simple, aes(x = time)) +
+  geom_histogram(stat = 'count') +
+  theme(axis.text.x = element_text(angle = 90)) +
+  facet_wrap(~Name) +
+  xlab('Time of day') +
+  ylab('Count of sales per hour') +
+  ggtitle('Count of sales by hour') +
+  theme_bw() +
+  theme(axis.text.x = element_text(angle = 90)) 
+
+amount_by_time <- ggplot(summary, aes(x = time, y = thing)) + 
+  geom_col() +
+  facet_wrap(~Name) +
+  xlab('Time of day') +
+  ylab('Sum of sale amounts') +
+  ggtitle('Sum of sales by hour') +
+  theme_bw() +
+  theme(axis.text.x = element_text(angle = 90)) 
+
+```
+
+```{r, warning=FALSE}
+by_time
+
+amount_by_time
+
+```
+
+
+When we drill down and look at the traffic per hour and sum of sales per hour, we see that again HotDiggity has the greastest magnitude at its peak hours and very compared values at all other times again supporting that HotDiggit would be my recommendation. Looking at the traffic and sales by hour again specifically for HotDiggity, though this trend carries over to the other businesses as well, there is some traffic from 12am to about 5am, then a dead period from 5am to 3 or 4pm, then a surge in traffic when most transactions are done. The surge ends around 10pm, but there is consistent traffic until the end of the day. Realistically the early morning traffic is probably a continuation of the late day traffic. 
+
+```{r,include=FALSE}
+#weekly and monthly plots 
+weekly_dat <- dat
+weekly_dat$date <- ceiling_date(weekly_dat$date, unit = 'week') 
+weekly_dat$date <- strftime(weekly_dat$date, format = '%V')
+
+weekly_dat_summary <- weekly_dat %>% 
+  filter(Name != 'Missing') %>% 
+  group_by(Name, date) %>% 
+  summarise(sum = sum(Amount, na.rm = T)) %>% 
+  arrange(Name, date)
+weekly_dat_summary
+
+weekly_plot <- ggplot(weekly_dat_summary, aes(x = date, y = sum)) + 
+  geom_col() +
+  facet_wrap(~Name) +
+  xlab('Company') +
+  ylab('Sum of total sales') +
+  ggtitle('Total sales by company each week') +
+  theme_bw()
+
+monthly_dat <- dat
+monthly_dat$date <- ceiling_date(monthly_dat$date, unit = 'month') 
+monthly_dat$date <- strftime(monthly_dat$date, format = '%B')
+
+monthly_dat_summary <- monthly_dat %>% 
+  filter(Name != 'Missing') %>% 
+  group_by(Name, date) %>% 
+  summarise(sum = sum(Amount, na.rm = T)) %>% 
+  arrange(Name, date)
+monthly_dat_summary
+
+monthly_plot <- ggplot(monthly_dat_summary, aes(x = date, y = sum)) + 
+  geom_col() +
+  facet_wrap(~Name) +
+  xlab('Month') +
+  ylab('Sum of total sales') +
+  ggtitle('Total sales by company each month') +
+  theme_bw()
+
+```
+
+```{r, warning=FALSE}
+weekly_plot
+
+monthly_plot
+
+```
+
+
+Our inferences hold when we look at sum of sales by week and by month
+
+```{r, include=FALSE}
+#days of the week plot 
+special_dat <- dat
+special_dat$date <- weekdays(dat$date)
+
+summary3 <- special_dat %>% 
+  filter(Name == 'HotDiggity') %>% 
+  group_by(date, time) %>% 
+  summarise(sum = sum(Amount, na.rm = T))
+summary3
+
+weekday <- ggplot(summary3, aes(x = time, y = sum)) +
+  geom_col() +
+  facet_wrap(~date) +
+  xlab('Time') +
+  ylab('Count of sales per hour') +
+  ggtitle('Sum of sales per hour for each day of the week') +
+  theme_bw() +
+  theme(axis.text.x = element_text(angle = 90)) 
+```
+
+```{r, warning=FALSE}
+weekday
+```
+
+
+Finally, when we look at sales by hour and weekday we see that the general trend seen in the previous holds for Monday through Friday, but with no early morning traffic on Monday and Thursday. Saturday and Sunday have exclusivley morning traffic, and are lower total traffic days than the weekdays. My recommendation for operating hours would be: 4pm to 5am on the weekdays, and 12am to 5am on the weekends. 
