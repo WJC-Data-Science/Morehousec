@@ -1,0 +1,47 @@
+---
+title: "task 21"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+require(tidyquant)
+require(tidyverse)
+require(dygraphs)
+require(timetk)
+require(dplyr)
+require(lubridate)
+
+end <- today()
+start <- end - years(5)
+
+kroger <- tq_get('KR', get = 'stock.prices', start = start, end = end)
+
+kroger_xts <- kroger %>% 
+  select(symbol, date, close) %>% 
+  tk_xts(date_var = date) 
+
+kroger_xts_invest <- kroger %>% 
+  filter(date >= as.Date('2018-4-5')) %>% 
+  select(date, close) %>% 
+  tk_xts(date_var = date)
+
+```
+
+
+```{r, warning=FALSE}
+dygraph(kroger_xts, main = 'Kroger stock performance over last 5 years') 
+
+```
+
+
+```{r,warning=FALSE}
+dygraph(kroger_xts_invest, main = 'initial 10k investment') %>% 
+  dyRebase(value = 10000) %>% 
+  dyAnnotation('2019-3-1', text = 'a', tooltip = 'disappointing fiscal report releasesd') %>% 
+  dyAnnotation('2019-8-5', text = 'b', tooltip = 'very optomistic fiscal projections released')
+
+```
+
+I first plotted the close price over the last five years as I thought that was an accurate representation of the stock performance over the last five years. 
+
+Next, I set the base investment value to 10k and and showed performance starting in april of 2018. We can see that overall we come out on top, though there is a signifigant amount of time where the stock wasn't performing well. through research I found that the largest downturn and beginning of the upturn where both heavily correlated with releases of fiscal reports that were both not positive enough and then very optimistic respectively. 
