@@ -1,0 +1,365 @@
+---
+title: "data viz project"
+output: 
+  html_document:
+    keep_md: TRUE
+    code_folding: hide
+---
+
+```{r setup, include=FALSE} 
+require(tidyverse)
+require(open)
+require(ggplot2)
+require(png)
+
+bb <- c('KC','SL','CH','CU')
+fb <- c('FF','SI','FC','FS')
+sm <- c('foul_tip','swinging_strike')
+
+img <- readPNG('square.png')
+
+#rays 
+jm20all <- read_csv('ji-man20_all_pitches.csv')
+
+tg20all <- read.csv('glasnow_all_pitches.csv')
+
+
+#dodgers 
+mb20all <- read_csv('betts_all_pitches.csv')
+
+wb20all <- read_csv('buehler_all_pitches.csv')
+
+
+#####
+# functions #
+
+'%notin%' <- Negate('%in%')
+
+xwoba <- function(x,y) {
+  x <- x %>% 
+    filter(plate_x != 'null') %>% 
+    filter(estimated_woba_using_speedangle != 'null')
+  
+  x$plate_x <- as.numeric(x$plate_x)
+  x$plate_z <- as.numeric(x$plate_z)
+  
+  sztop <- mean(x$sz_top)
+  szbot <- mean(x$sz_bot)
+  
+  px <- ggplot(x, aes(x = plate_x, y = plate_z)) +
+    annotation_raster(img, ymin = szbot, ymax= sztop, xmin = -0.7083333, xmax = 0.7083333) +
+    stat_summary_2d(aes(z = as.numeric(estimated_woba_using_speedangle)), binwidth = .3,  alpha = .8) +
+    scale_fill_gradient(low = 'blue', high = 'green') +
+    labs(fill = 'xwoba') +
+    ggtitle(y) +
+    theme(axis.text.x = element_blank(),
+          axis.text.y = element_blank(),
+          axis.title.x = element_blank(),
+          axis.title.y = element_blank())
+  px
+}
+
+allswings <- function(x,y) {
+  x <- x %>% 
+    filter(plate_x != 'null') %>% 
+    filter(type != 'B' & description != 'called_strike' & description != 'foul_bunt')
+  
+  sztop <- mean(x$sz_top)
+  szbot <- mean(x$sz_bot)
+  
+  px <- ggplot(x, aes(x = plate_x, y = plate_z)) +
+    annotation_raster(img, ymin = szbot, ymax = sztop, xmin = -0.7083333, xmax = 0.7083333) +
+    stat_density_2d_filled(contour_var = 'count', alpha = .6) +
+    ggtitle(y) +
+    theme(axis.text.x = element_blank(),
+          axis.text.y = element_blank(),
+          axis.title.x = element_blank(),
+          axis.title.y = element_blank(),
+          legend.position = 'none')
+  px
+}
+
+sam <- function(x,y) {
+  x <- x %>% 
+    filter(plate_x != 'null') %>% 
+    filter(description %in% sm)
+  
+  sztop <- mean(x$sz_top)
+  szbot <- mean(x$sz_bot)
+  
+  px <- ggplot(x, aes(x = plate_x, y = plate_z)) +
+    annotation_raster(img, ymin = szbot, ymax = sztop, xmin = -0.7083333, xmax = 0.7083333) +
+    stat_density_2d_filled(contour_var = 'count', alpha = .6) +
+    ggtitle(y) +
+    theme(axis.text.x = element_blank(),
+          axis.text.y = element_blank(),
+          axis.title.x = element_blank(),
+          axis.title.y = element_blank())
+  px
+}
+
+xwobafb <- function(x,y) {
+  x <- x %>% 
+    filter(plate_x != 'null' & estimated_woba_using_speedangle != 'null') %>% 
+    filter(pitch_type %in% fb)
+  
+  sztop <- mean(x$sz_top)
+  szbot <- mean(x$sz_bot)
+  
+  px <- ggplot(x, aes(x = plate_x, y = plate_z)) +
+    annotation_raster(img, ymin = szbot, ymax = sztop, xmin = -0.7083333, xmax = 0.7083333) +
+    stat_summary_2d(aes(z = as.numeric(estimated_woba_using_speedangle)), binwidth = .25,  alpha = .7) +
+    scale_fill_gradient(low = 'blue', high = 'green') +
+    labs(fill = 'xwoba') +
+    ggtitle(y) +
+    theme(axis.text.x = element_blank(),
+          axis.text.y = element_blank(),
+          axis.title.x = element_blank(),
+          axis.title.y = element_blank())
+  px
+}
+
+xwobabb <- function(x,y) {
+  x <- x %>% 
+    filter(plate_x != 'null' & estimated_woba_using_speedangle != 'null') %>% 
+    filter(pitch_type %in% bb) 
+  
+  sztop <- mean(x$sz_top)
+  szbot <- mean(x$sz_bot)
+  
+  px <- ggplot(x, aes(x = plate_x, y = plate_z)) +
+    annotation_raster(img, ymin = szbot, ymax = sztop, xmin = -0.7083333, xmax = 0.7083333) +
+    stat_summary_2d(aes(z = as.numeric(estimated_woba_using_speedangle)), binwidth = .3,  alpha = .7) +
+    scale_fill_gradient(low = 'blue', high = 'green') +
+    labs(fill = 'xwoba') +
+    ggtitle(y) +
+    theme(axis.text.x = element_blank(),
+          axis.text.y = element_blank(),
+          axis.title.x = element_blank(),
+          axis.title.y = element_blank())
+  px
+}
+
+xwobafc <- function(x,y) {
+    x <- x %>% 
+    filter(plate_x != 'null' & estimated_woba_using_speedangle != 'null') %>% 
+    filter(pitch_type == 'FC') 
+  
+  sztop <- mean(x$sz_top)
+  szbot <- mean(x$sz_bot)
+  
+  px <- ggplot(x, aes(x = plate_x, y = plate_z)) +
+    annotation_raster(img, ymin = szbot, ymax = sztop, xmin = -0.7083333, xmax = 0.7083333) +
+    stat_summary_2d(aes(z = as.numeric(estimated_woba_using_speedangle)), binwidth = .3,  alpha = .7) +
+    scale_fill_gradient(low = 'blue', high = 'green') +
+    labs(fill = 'xwoba') +
+    ggtitle(y) +
+    theme(axis.text.x = element_blank(),
+          axis.text.y = element_blank(),
+          axis.title.x = element_blank(),
+          axis.title.y = element_blank())
+  px
+}
+
+smfb <- function(x,y) {
+  x <- x %>% 
+    filter(plate_x != 'null') %>% 
+    filter(description %in% sm) %>% 
+    filter(pitch_type %in% fb)
+  
+  sztop <- mean(x$sz_top)
+  szbot <- mean(x$sz_bot)
+  
+  px <- ggplot(x, aes(x = plate_x, y = plate_z)) +
+    annotation_raster(img, ymin = szbot, ymax = sztop, xmin = -0.7083333, xmax = 0.7083333) +
+    stat_density_2d_filled(contour_var = 'count', alpha = .6) +
+    ggtitle(y) +
+    theme(axis.text.x = element_blank(),
+          axis.text.y = element_blank(),
+          axis.title.x = element_blank(),
+          axis.title.y = element_blank())
+  px
+}
+
+smbb <- function(x,y) {
+  x <- x %>% 
+    filter(plate_x != 'null') %>% 
+    filter(description %in% sm) %>% 
+    filter(pitch_type %in% bb)
+  
+  sztop <- mean(x$sz_top)
+  szbot <- mean(x$sz_bot)
+  
+  px <- ggplot(x, aes(x = plate_x, y = plate_z)) +
+    annotation_raster(img, ymin = szbot, ymax = sztop, xmin = -0.7083333, xmax = 0.7083333) +
+    stat_density_2d_filled(contour_var = 'count', alpha = .6) +
+    ggtitle(y) +
+    theme(axis.text.x = element_blank(),
+          axis.text.y = element_blank(),
+          axis.title.x = element_blank(),
+          axis.title.y = element_blank())
+  px
+}
+
+smfc <- function(x,y) {
+    x <- x %>% 
+    filter(plate_x != 'null') %>% 
+    filter(description %in% sm) %>% 
+    filter(pitch_type == 'FC')
+  
+  sztop <- mean(x$sz_top)
+  szbot <- mean(x$sz_bot)
+  
+  px <- ggplot(x, aes(x = plate_x, y = plate_z)) +
+    annotation_raster(img, ymin = szbot, ymax = sztop, xmin = -0.7083333, xmax = 0.7083333) +
+    stat_density_2d_filled(contour_var = 'count', alpha = .6) +
+    ggtitle(y) +
+    theme(axis.text.x = element_blank(),
+          axis.text.y = element_blank(),
+          axis.title.x = element_blank(),
+          axis.title.y = element_blank())
+  px
+}
+```
+
+# Intro 
+
+This will be a scouting report on the starting lineups of each of the two world series teams. We will attempt to give a plan to the pitchers on how to attack the hitters of the opposing teams. For brevity, I will only be assesing the first batter of each lineup and one of the starting pitchers for each team. The functions are built such that this can be done for any player over any period of time. 
+
+There are three types of functions, xwoba, sm, and allswings. The all swings charts all of the swings recorded in game for either the hitter or pitcher, as the functions work for both. The sm functions, and the fastball (fb) and breaking ball (bb) variants plot all swing and misses the player either took or induced. The xwoba function plots the xwoba of the batted ball event the player induced or produced. xwoba stands for expected weighted on base average. 
+
+We are interested in the three characteristics because we want to know where the hitter is effective in the zone (xwoba) and where the hitter is weak in the zone (sm). xwoba is a value that uses the exit velocity, launch angle, and horizontal launch angle of the batted ball to predict the woba of a the batted ball. woba itself highly correlates with run production and therefore has high offensive value. The reason we look at swing and misses is because the goal of the pitcher is to try and induce weak contact that more often leads to outs and not runs scored. The weakest contact of all is the swing and miss, which also elimanates the possibility of an error on the defense. 
+
+## Tyler Glasnow
+
+First we will look at one of the starting pitchers for the Rays and try and understand his strengths and weaknesses. 
+
+```{r}
+xwobafb(tg20all,'Tyler Glasnow xwoba by pitch location (fb only)')
+```
+
+From the graph we see the most offensive production is produced by balls that are in the low middle of the zone for his fastball. Now we look at his breaking ball 
+
+```{r}
+xwobabb(tg20all,'Tyler Glasnow xwboa by pitch location (bb only)')
+```
+
+Unsuprisingly, we see that when it's left in the middle of the zone it gets hit well. We also see a lot of graph without any information at all though. This is because it's a pitch that induces a lot of swings and misses, and we can see that in the next graph. 
+
+```{r}
+smbb(tg20all,'Tyler Glasnow swing and miss by pitch location (bb only)')
+```
+
+We see that most of his swing and misses happen at the bottom of the zone or lower, which makes sense considering we saw that anything higher gets hit in the previous graph. An interesting point to see is that the outliers that lie well below the zone, these indicate that hitters swung and missed at pitches that bounced well before they made it to the plate. This adds to our conclusion that this is a very good pitch. Lets go back and look where he induces swing and misses with his fastball to round out his full profile. 
+
+```{r}
+smfb(tg20all,'Tyler Glasnow swing and misses by pitch location (fb only)')
+```
+
+We see almost all swing and misses on his fastball are at the top of the zone or higher. Due to the way fastballs and curveballs move, this allows him to start the trajectory of the two pitches in nearly the same position and the pitches won't differentiate themselves until that are much closer to the plate. This is an effect called tunneling, which makes it very difficult for hitters to dicern the pitch type. All this comes together, combined with his above average fastball and curveball velocity, to make his game plan fairly simple. He should throw a good mix of fastballs at the top of the zone and curveballs that tunnel with that and eventually end up in the bottom of the zone. 
+
+## Mookie Betts
+
+We now look at the first batter Glasnow will face, Mookie Betts. We'll start with where he produces the most offensive value. 
+
+```{r}
+xwoba(mb20all,'Mookie Betts xwoba by pitch location')
+```
+
+Interestingly, we see Betts is good at hitting the middle middle ball, but also see that he does well at the top and bottom of the zone too. This is going to present a challenge for Glasnow. Lets further breakdown by pitch type to see if there's something more we can find. 
+
+```{r}
+xwobafb(mb20all,'Mookie Betts xwoba by pitch location (fb only)')
+```
+
+It's not looking good as Betts performs well at the top of the zone with fastballs, and there's evidence that he doesn't swing at high fastballs often either. Lets check that. 
+
+```{r}
+smfb(mb20all,'Mookie Betts swing and miss by pitch location (fb only)')
+```
+
+We see that Mookie actually swings and misses at low fastballs mostly, contrary to where Glasnow gets his swings and misses. this doesn't seem to happen very often, though. Lets see if this trend continues for the breaking ball. 
+
+
+```{r}
+xwobabb(mb20all,'Mookie Betts xwoba by pitch location (bb only)')
+```
+
+Again, this isn't a great sign for Glasnow as Betts hits the low breaking ball well. Lets check the swing and misses.
+
+```{r}
+smbb(mb20all,'Mookie Betts swings and misses by pitch location (bb only)')
+```
+
+Finally, we see he is susecptible to breaking balls outside the bottom of the zone, but again this is a fairly rare occurance. 
+
+In conclusion, Glasnow is goig to have a very tough match up with Betts. He counters Glasnow's strengths very well. Glasnow will have to get ahead with potentially high curveballs for strikes early then keep a good mix of fastballs and curveballs. He can either try a fastball low and away for the strike out or he can attempt to get Betts to chase a curveball below the zone. For the second option he will need to err on the side of bouncing the curveball or else it will fall into an area that Betts hits well. 
+
+## Walker Buehler 
+
+The other starting pitcher we will look at is Walker Buehler. Buehler is very similar to Glasnow in that he relies most heavily on the fastball and curveball, but Buehler also throws a cutter regularly so we will also look at that pitch independently. 
+
+```{r}
+xwobafb(wb20all,'Walker Buehler xwoba by pitch location (fb only)')
+```
+
+Very standard, the closer Buehler threw his fastball to the middle of the zone the better opposing batter performed against it. Lets see where they don't perform well.
+
+```{r}
+smfb(wb20all,'Walker Buehler swing and miss by pitch location (fb only)')
+```
+
+Like I said earlier, Glasnow and Buehler are very simialr pitchers and thus it makes sense that their swing and miss charts should look very similar with most of the swings and misses happening at the top of and above the zone. Next his curveball.
+
+```{r}
+xwobabb(wb20all,'Walker Buehler xwoba by pitch location (bb only)')
+```
+
+
+Very similar, if the pitch is in the middle of the zone it has a high chance of being hit well. We also see that there are many areas without data again. This is indicative of the ball not being put in play very often when compared to the fastball. Lets look where this pitch is most effective. 
+
+```{r}
+smbb(wb20all,'Walker Buehler swing and misses by pitch location (bb only)')
+```
+
+This is similar to Glasnow, but even more extreme show values exclusivley in the bottom of the zone or just below it. This leads us to similar conclusions we drew about Glasnows curveball. It performs very well at the bottom of the zone and should tunnel well with his fastball. Now lets look at the cutter.
+
+```{r}
+xwobafc(wb20all,'Walker Buehler xwoba by pitch location (fc only)')
+```
+
+We see that almost all of the pitches are on the first base side of the plate and, like before, if they're left in the middle of the plate the will get hit. lets see if it induces many swing and misses. 
+
+```{r}
+smfc(wb20all,'Walker Buehler swing and misses by pitch location (fc only)')
+```
+
+We can see here when it's located just outside the zone is where it holds the most value. What's more, the cutter acts as a bridge between the fastball and curveball. The fastball is the flattest pitch Buehler throws and the curveball has the most drop of any of his pitches. This extreme difference in movement makes the two pitches potentially easy to differentiate. The cutter has a 'neutral' amount of movement, where it kills most of the spin based movement imparted on the ball that the other two pitches rely on. This allows the cutter to be a go between pitch that can be thrown before a curveball at the bottom of the zone, where it will still be a strike, and then a curveball thrown with the same inintal trajectory will then look like a strike but end up out of the zone and will induce a swing and miss. It can be paired similarly with a high fastball. The cutter will fall a short amount and catch the top of the zone, then followed with a fastball that will be outside the zone but have the same initial trajectory. These both work to fool the batter into swinging at pitches they can't actually hit well. 
+
+In conclusion, Buehler should throw his fastball and curveball with the same intentions as we discussed with Glasnow, but he can mix in a cutter to further fool the batter in cases where the batter may be able to discern the fastball and curveball soon enough to take the pitch, because we've seen both of those pitches perform the best outside of the zone and this cutter allows Buehler to throw pitches that will end up in the zone with the same trajectory of his other pitches that won't allowing him to further fool the batter. 
+
+## Ji-Man Choi
+
+Now we look to his competetion and how Choi's stregths and weaknesses affect our game plan. First, well look at his xwoba chart. 
+
+```{r}
+xwoba(jm20all,'Ji-Man Choi xwboa by pitch location')
+```
+
+We see that Choi produces most of his xwoba in the low outside part of the zone (he's lefthanded). We see that he doesn't produce much xwoba on the inside or top of the zone. The areas with no values on the chart indicate no balls put in play there, therefore we can see that he doesn't often swing at pitches on the low inside part of the zone, so it'll be hard to get him to chase pitches here. This will be a detriment to Buehler's cutter, but he does swing at ptiches in the top middle of the zone. We will further confirm this by looking at Choi's swing and misses for fb. 
+
+```{r}
+smfb(jm20all,'Ji-Man Choi swing and misses by pitch location (fb only)')
+```
+
+Choi seems susceptible to high fastballs, this will be the foundation of our attack plan for Choi as it tends toward Glasnow's strengths. We'll check how Choi handles breaking balls as well. 
+
+```{r}
+smbb(jm20all,'Ji-Man Choi swing and miss by pitch location (bb only)')
+```
+
+Interestingly we see that he swing and misses on breaking pitches are similar to where he has the most success. This could make sense as he would be fooled by the breaking pitch's movement when it's in a location he likes. This location is simialr to the location that Glasnow has success with his breaking ball, therefore we won't need to change Buehler's general attack plan much for Choi specifically. High fast balls and low breaking balls. 
+
+# Conclusion 
+
+In conclusion, Glasnow is going to have to be very careful when faceing Betts because Betts is well suited to handle Glasnow's strengths. Where as Buehler is well suited to suited to take care of Choi because his strenths are Choi's weaknesses. 
